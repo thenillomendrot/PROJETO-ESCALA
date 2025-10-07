@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Editar Registro</title>
+     <style>
+        body { font-family: sans-serif; margin: 2em; }
+        form { max-width: 500px; }
+        label { display: block; margin-top: 1em; }
+        input { width: 100%; padding: 8px; margin-top: 0.5em; }
+        button { background-color: #28a745; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; margin-top: 1em;}
+    </style>
+</head>
+<body>
+    <h1>Editar Registro da Comissão</h1>
+    {% if log %}
+    <form method="post">
+        <p><strong>Militar:</strong> {{ log.graduacao }} {{ log.nome }}<br>
+           <strong>Escala:</strong> {{ log.escala }}</p>
+        
+        <label for="data_nomeacao">Data da Nomeação:</label>
+        <input type="text" id="data_nomeacao" name="data_nomeacao" value="{{ log.data_nomeacao }}">
+
+        <label for="diex">DIEx:</label>
+        <input type="text" id="diex" name="diex" value="{{ log.diex }}">
+
+        <label for="nup">NUP:</label>
+        <input type="text" id="nup" name="nup" value="{{ log.nup }}">
+        
+        <button type="submit">Salvar Alterações</button>
+    </form>
+    {% else %}
+    <p>Registro não encontrado.</p>
+    {% endif %}
+</body>
+</html>

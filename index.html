@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Sistema de Escalas</title>
+    <style>body { font-family: sans-serif; margin: 2em; } h1, h2 { color: #333; } .container { display: flex; flex-wrap: wrap; gap: 2em; } .escala-box { border: 1px solid #ccc; border-radius: 8px; padding: 1em; min-width: 300px; background-color: #f9f9f9;} ul { list-style-type: none; padding-left: 0; } li { margin-bottom: 0.5em; } input[type="text"] { width: 95%; padding: 8px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; } button { background-color: #007bff; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; } button:hover { background-color: #0056b3; } nav { margin-bottom: 2em; padding-bottom: 1em; border-bottom: 2px solid #eee;} nav a { margin-right: 1.5em; text-decoration: none; color: #007bff; font-weight: bold; font-size: 1.1em;}</style>
+</head>
+<body>
+    <h1>Sistema de Gerenciamento de Escalas</h1>
+    <nav>
+        <a href="{{ url_for('index') }}">Página Principal</a>
+        <a href="{{ url_for('ver_log') }}">Histórico de Comissões</a>
+        <a href="{{ url_for('gerenciar_efetivo') }}">Gerenciar Efetivo</a>
+    </nav>
+    <div class="container">
+        {% for escala in escalas %}
+        <div class="escala-box">
+            <h2>Escala {{ escala.upper() }}</h2>
+            {% set sugestao = sugestoes[escala] %}
+            {% if sugestao %}
+                <ul>
+                    {% for militar in sugestao %}
+                    <li>{{ militar.graduacao }} {{ militar.nome }}</li>
+                    {% endfor %}
+                </ul>
+                <form action="{{ url_for('nomear', nome_escala=escala) }}" method="post">
+                    {% for militar in sugestao %}
+                    <input type="hidden" name="nomes_escalados" value="{{ militar.nome }}">
+                    {% endfor %}
+                    <label for="diex-{{ escala }}">DIEx:</label>
+                    <input type="text" id="diex-{{ escala }}" name="diex" required>
+                    <label for="nup-{{ escala }}">NUP:</label>
+                    <input type="text" id="nup-{{ escala }}" name="nup" required>
+                    <button type="submit">Confirmar Nomeação</button>
+                </form>
+            {% else %}
+                <p>Não há militares disponíveis para gerar a escala.</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</body>
+</html>
