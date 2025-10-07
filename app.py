@@ -7,9 +7,11 @@ app = Flask(__name__)
 app.secret_key = 'sua-chave-secreta-aqui-pode-ser-qualquer-coisa'
 
 # --- CONFIGURAÇÃO DO BANCO DE DADOS ---
+# Pega a URL de conexão do ambiente do Render
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
+
 
 # --- CONFIGURAÇÃO DAS ESCALAS E DADOS INICIAIS ---
 MAPA_CATEGORIA_POSTO = {
@@ -64,7 +66,7 @@ DADOS_INICIAIS_EFETIVO = [
     {'graduacao': 'ASP', 'nome': 'LUZ'}, {'graduacao': 'ASP', 'nome': 'CARDOSO'},
 ]
 
-# --- MODELOS DO BANCO DE DADOS (COM CORREÇÃO) ---
+# --- MODELOS DO BANCO DE DADOS ---
 comissao_militar = db.Table('comissao_militar',
     db.Column('comissao_id', db.Integer, db.ForeignKey('comissao.id'), primary_key=True),
     db.Column('efetivo_id', db.Integer, db.ForeignKey('efetivo.id'), primary_key=True)
@@ -79,7 +81,6 @@ class Efetivo(db.Model):
     ultima_comissao_TREM = db.Column(db.Date, nullable=True)
     ultima_comissao_PT = db.Column(db.Date, nullable=True)
     ultima_comissao_RANCHO = db.Column(db.Date, nullable=True)
-    # AJUSTE AQUI: Trocamos 'backref' por 'back_populates' para ser mais explícito
     comissoes = db.relationship('Comissao', secondary=comissao_militar, back_populates='militares')
 
 class Comissao(db.Model):
@@ -89,13 +90,9 @@ class Comissao(db.Model):
     diex = db.Column(db.String(100))
     nup = db.Column(db.String(100))
     status = db.Column(db.String(20), default='Em Andamento')
-    # AJUSTE AQUI: Trocamos 'backref' por 'back_populates' para ser mais explícito
     militares = db.relationship('Efetivo', secondary=comissao_militar, back_populates='comissoes')
 
-
-# --- LÓGICA DO SISTEMA (O restante das funções e rotas permanecem iguais) ---
-# ... (cole aqui todas as funções: get_militares_ocupados, calcular_folga, etc.) ...
-# ... (e também todas as rotas: @app.route('/'), @app.route('/log'), etc., da versão anterior) ...
+# --- LÓGICA DO SISTEMA ---
 def get_militares_ocupados():
     comissoes_em_andamento = Comissao.query.filter_by(status='Em Andamento').all()
     ocupados = set()
@@ -105,7 +102,7 @@ def get_militares_ocupados():
     return ocupados
 
 def calcular_folga(militar, nome_escala):
-    data_ultima_comissao = getattr(militar, f'ultima_comissao_{nome_escala.upper()}')
+    data_ultima_comissao = getattr(militar, f'ultima_comissao_{nome_escala.upper()}', None)
     if not data_ultima_comissao: return float('inf')
     return (date.today() - data_ultima_comissao).days
 
@@ -125,6 +122,7 @@ def sugerir_escala(nome_escala, militares_ocupados):
         for s in candidatos[:qtd]: sugeridos.add(s.nome)
     return sugestao
 
+# --- ROTAS DA APLICAÇÃO ---
 @app.route('/')
 def index():
     militares_ocupados = get_militares_ocupados()
@@ -210,4 +208,12 @@ def excluir_efetivo(militar_id):
     return redirect(url_for('gerenciar_efetivo'))
 
 # --- INICIALIZAÇÃO DO BANCO DE DADOS ---
-# REMOVIDO DESTA VERSÃO PARA NÃO CAUSAR ERROS EM DEPLOYS FUTUROS
+with app.app_context():
+    db.create_all()
+    if Efetivo.query.count() == 0:
+        print("Populando o banco de dados com o efetivo inicial...")
+        for militar_data in DADOS_INICIAIS_EFETIVO:
+            novo_militar = Efetivo(graduacao=militar_data['graduacao'], nome=militar_data['nome'])
+            db.session.add(novo_militar)
+        db.session.commit()
+        print("Banco de dados populado com sucesso.")
