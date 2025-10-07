@@ -205,14 +205,3 @@ def excluir_efetivo(militar_id):
     db.session.commit()
     flash('Militar excluído com sucesso!', 'success')
     return redirect(url_for('gerenciar_efetivo'))
-
-# --- INICIALIZAÇÃO DO BANCO DE DADOS ---
-with app.app_context():
-    db.create_all()
-    if Efetivo.query.count() == 0:
-        print("Populando o banco de dados com o efetivo inicial...")
-        for militar_data in DADOS_INICIAIS_EFETIVO:
-            novo_militar = Efetivo(graduacao=militar_data['graduacao'], nome=militar_data['nome'])
-            db.session.add(novo_militar)
-        db.session.commit()
-        print("Banco de dados populado com sucesso.")
